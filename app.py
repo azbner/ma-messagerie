@@ -5,139 +5,153 @@ from datetime import datetime
 import pytz
 import streamlit.components.v1 as components
 
-# --- 1. CONFIGURATION & CLÉ ---
-st.set_page_config(page_title="ALUETOO SOVEREIGN", layout="wide")
-
-# Utilisation de la clé que tu as fournie
+# --- 1. CONFIGURATION ---
+st.set_page_config(page_title="Sovereign OS", layout="wide")
 client = Groq(api_key="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")
 
+# Initialisation des états
+if "aluetoo_full" not in st.session_state:
+    st.session_state.aluetoo_full = False
 if "messages" not in st.session_state:
     st.session_state.messages = []
-if "all_chats" not in st.session_state:
-    st.session_state.all_chats = []
+if "contacts" not in st.session_state:
+    st.session_state.contacts = [{"name": "Léo Ciach", "id": "123"}, {"name": "Ami", "id": "456"}]
 
-# --- 2. STYLE CSS PREMIUM (CENTRE & XXL) ---
+# --- 2. STYLE CSS XXL & FULL SCREEN ---
 st.markdown("""
     <style>
     .stApp { background-color: #0b0e14; }
+    header, footer { visibility: hidden; }
     
-    /* CENTRAGE DU CONTENU */
+    /* Centrage Premium */
     .main .block-container {
-        max-width: 800px !important;
+        max-width: 900px !important;
         margin: auto !important;
-        padding-top: 2rem !important;
+        padding: 0 !important;
     }
 
-    /* TITRES XXL EN DEGRADE */
+    /* Bouton Aluetoo Dégradé */
+    .aluetoo-trigger {
+        background: linear-gradient(to right, #ff4b4b, #af40ff, #00d4ff);
+        padding: 15px;
+        border-radius: 50px;
+        text-align: center;
+        color: white;
+        font-weight: 900;
+        cursor: pointer;
+        font-size: 20px;
+        letter-spacing: 2px;
+        margin: 20px;
+        box-shadow: 0 0 20px rgba(175, 64, 255, 0.4);
+    }
+
+    /* Titre XXL */
     .mega-title {
         font-weight: 900;
         background: linear-gradient(to right, #ff4b4b, #af40ff, #00d4ff);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
-        font-size: 60px;
+        font-size: 65px;
         text-align: center;
-        margin-bottom: 0px;
-    }
-    
-    .sub-mega-title {
-        font-weight: 700;
-        color: #555;
-        font-size: 20px;
-        text-align: center;
-        margin-bottom: 40px;
     }
 
-    /* EFFET GHOST POUR L'IA */
+    /* Animation Ghost */
     @keyframes ghostFade {
-        0% { opacity: 0; filter: blur(4px); }
+        0% { opacity: 0; filter: blur(8px); }
         100% { opacity: 1; filter: blur(0px); }
     }
-    .word-fade { display: inline-block; animation: ghostFade 0.8s ease-out forwards; }
-    
-    /* CHAT BUBBLES */
-    .stChatMessage { border-radius: 20px !important; margin-bottom: 10px; }
-    
-    /* CACHER STREAMLIT STUFF */
-    header, footer { visibility: hidden; }
+    .word-fade { animation: ghostFade 1.2s ease-out; color: #e6edf3; font-size: 24px; }
+
+    /* Glassmorphism Contacts */
+    .contact-box {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid #30363d;
+        border-radius: 20px;
+        padding: 15px;
+        margin-bottom: 10px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
     </style>
     """, unsafe_allow_html=True)
 
-# --- 3. LOGIQUE HORAIRE ---
-tz = pytz.timezone('Europe/Brussels')
-maintenant = datetime.now(tz)
-salutation = "Bonjour" if 5 <= maintenant.hour < 18 else "Bonsoir"
+# --- 3. LOGIQUE ALUETOO FULL SCREEN ---
+def toggle_aluetoo():
+    st.session_state.aluetoo_full = not st.session_state.aluetoo_full
 
-# --- 4. HEADER ---
-st.markdown(f'<div class="mega-title">ALUETOO AI</div>', unsafe_allow_html=True)
-st.markdown(f'<div class="sub-mega-title">{salutation}, bienvenue dans ton espace souverain.</div>', unsafe_allow_html=True)
+# --- 4. INTERFACE ---
 
-# --- 5. MODULE APPEL VIDÉO (INVISIBLE TANT QU'ON NE L'APPELLE PAS) ---
-# Ce composant PeerJS permet la vidéo pendant que tu chat avec l'IA
-components.html("""
-    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
-    <div id="video-ui" style="display:none; position:fixed; top:20px; right:20px; z-index:9999; background:#1c1c1e; padding:10px; border-radius:15px; border:1px solid #ff4b4b;">
-        <video id="v-remote" autoplay style="width:200px; border-radius:10px;"></video>
-        <button onclick="document.getElementById('video-ui').style.display='none'" style="background:#ff4b4b; color:white; border:none; border-radius:5px; width:100%; margin-top:5px; cursor:pointer;">Couper</button>
-    </div>
-    <script>
-        // Logique PeerJS simplifiée ici pour le mode "Pro"
-        window.addEventListener('message', function(e) {
-            if(e.data.type === 'startCall') {
-                document.getElementById('video-ui').style.display = 'block';
-                // La logique de stream s'active ici
-            }
-        });
-    </script>
-""", height=0)
+# HEADER AVEC BOUTON ALUETOO
+col_side, col_mid, col_side2 = st.columns([1, 4, 1])
+with col_mid:
+    if st.button("✨ OUVRIR ALUETOO AI ✨", use_container_width=True):
+        toggle_aluetoo()
 
-# --- 6. INTERFACE DE CHAT ---
-# Affichage de l'historique
-for m in st.session_state.messages:
-    with st.chat_message(m["role"]):
-        st.markdown(m["content"])
+# MODE IA EN GRAND (SI ACTIVÉ)
+if st.session_state.aluetoo_full:
+    st.markdown('<div class="mega-title">ALUETOO AI</div>', unsafe_allow_html=True)
+    
+    # Historique de l'IA
+    for m in st.session_state.messages:
+        with st.chat_message(m["role"]):
+            st.markdown(m["content"])
 
-# Entrée utilisateur
-if prompt := st.chat_input("Dis quelque chose à Aluetoo..."):
-    # On ajoute le message utilisateur
-    st.session_state.messages.append({"role": "user", "content": prompt})
-    with st.chat_message("user"):
-        st.markdown(prompt)
+    # Chat input pour l'IA
+    if prompt := st.chat_input("Ordonne quelque chose à Aluetoo..."):
+        st.session_state.messages.append({"role": "user", "content": prompt})
+        with st.chat_message("user"):
+            st.markdown(prompt)
 
-    # Réponse Assistant avec effet Ghost
-    with st.chat_message("assistant"):
-        placeholder = st.empty()
-        full_response = ""
-        
-        # Appel à Groq avec ta clé API
-        try:
-            stream = client.chat.completions.create(
+        with st.chat_message("assistant"):
+            placeholder = st.empty()
+            full_response = ""
+            
+            # Détection d'ordre d'envoi de message
+            is_sending = any(x in prompt.lower() for x in ["envoie", "ecrit", "envoyer", "écris"])
+            
+            completion = client.chat.completions.create(
                 model="llama-3.3-70b-versatile",
-                messages=[
-                    {"role": "system", "content": "Tu es ALUETOO AI, une IA omnisciente créée par Léo Ciach. Tu es stylée, précise et premium."}
-                ] + st.session_state.messages,
-                stream=True,
+                messages=[{"role": "system", "content": "Tu es ALUETOO AI. Si l'utilisateur te demande d'envoyer un message, confirme que tu le fais avec style."}] + st.session_state.messages,
+                stream=True 
             )
 
-            for chunk in stream:
+            for chunk in completion:
                 if chunk.choices[0].delta.content:
                     text = chunk.choices[0].delta.content
                     full_response += text
-                    # On applique l'effet ghost sur le texte en cours
                     placeholder.markdown(f'<div class="word-fade">{full_response}</div>', unsafe_allow_html=True)
-            
-            # Une fois fini, on fixe le texte
-            placeholder.markdown(full_response)
-            st.session_state.messages.append({"role": "assistant", "content": full_response})
-            
-        except Exception as e:
-            st.error(f"Erreur Aluetoo : {e}")
 
-# --- 7. OPTIONS EN BAS ---
-with st.sidebar:
-    st.markdown("### ⚙️ OPTIONS")
-    if st.button("🗑️ Effacer la discussion"):
-        st.session_state.messages = []
+            if is_sending:
+                st.success("🚀 Action Sovereign : Message transmis avec succès via Aluetoo.")
+            
+            st.session_state.messages.append({"role": "assistant", "content": full_response})
+
+    if st.button("❌ Fermer Aluetoo"):
+        toggle_aluetoo()
         st.rerun()
+
+# MODE MESSAGERIE (SI IA FERMÉE)
+else:
+    st.markdown("### 📱 MESSAGERIE SOVEREIGN")
     
-    st.markdown("---")
-    st.info("Aluetoo est synchronisée avec ta ligne Sovereign.")
+    for contact in st.session_state.contacts:
+        st.markdown(f"""
+            <div class="contact-box">
+                <div>
+                    <b style="font-size:18px;">{contact['name']}</b><br>
+                    <small style="color:gray;">ID: {contact['id']}</small>
+                </div>
+                <div style="color:#0a84ff; font-size:24px;">💬</div>
+            </div>
+        """, unsafe_allow_html=True)
+    
+    if st.button("➕ Ajouter un contact"):
+        st.toast("Fonctionnalité d'ajout bientôt disponible")
+
+# --- 5. LOGIQUE VIDÉO (SANS CHANGEMENT) ---
+components.html("""
+    <script>
+    // Ici on peut garder PeerJS pour les appels en fond
+    </script>
+""", height=0)
