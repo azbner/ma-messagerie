@@ -1,104 +1,125 @@
 import streamlit as st
 from groq import Groq
 import time
+import json
 from datetime import datetime
 import pytz
-import streamlit.components.v1 as components
 
 # --- 1. CONFIGURATION ---
 st.set_page_config(page_title="Sovereign OS", layout="wide")
 client = Groq(api_key="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")
 
-# Initialisation des états
-if "aluetoo_full" not in st.session_state:
-    st.session_state.aluetoo_full = False
+# Initialisation des contacts dans le session_state
+if "contacts" not in st.session_state:
+    st.session_state.contacts = [{"name": "Léo Ciach", "id": "007"}]
+if "aluetoo_open" not in st.session_state:
+    st.session_state.aluetoo_open = False
 if "messages" not in st.session_state:
     st.session_state.messages = []
-if "contacts" not in st.session_state:
-    st.session_state.contacts = [{"name": "Léo Ciach", "id": "123"}, {"name": "Ami", "id": "456"}]
 
-# --- 2. STYLE CSS XXL & FULL SCREEN ---
+# --- 2. STYLE CSS (ANIMATIONS & CENTRAGE) ---
 st.markdown("""
     <style>
     .stApp { background-color: #0b0e14; }
     header, footer { visibility: hidden; }
     
-    /* Centrage Premium */
     .main .block-container {
-        max-width: 900px !important;
+        max-width: 800px !important;
         margin: auto !important;
-        padding: 0 !important;
+        padding-top: 2rem !important;
     }
 
-    /* Bouton Aluetoo Dégradé */
-    .aluetoo-trigger {
-        background: linear-gradient(to right, #ff4b4b, #af40ff, #00d4ff);
-        padding: 15px;
-        border-radius: 50px;
-        text-align: center;
-        color: white;
-        font-weight: 900;
-        cursor: pointer;
-        font-size: 20px;
-        letter-spacing: 2px;
-        margin: 20px;
-        box-shadow: 0 0 20px rgba(175, 64, 255, 0.4);
+    /* ANIMATIONS */
+    @keyframes aluetooIn {
+        from { opacity: 0; transform: scale(0.9) translateY(20px); filter: blur(10px); }
+        to { opacity: 1; transform: scale(1) translateY(0); filter: blur(0px); }
+    }
+    
+    .aluetoo-container {
+        animation: aluetooIn 0.6s cubic-bezier(0.23, 1, 0.32, 1) forwards;
     }
 
-    /* Titre XXL */
     .mega-title {
         font-weight: 900;
         background: linear-gradient(to right, #ff4b4b, #af40ff, #00d4ff);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
-        font-size: 65px;
+        font-size: 70px;
         text-align: center;
+        margin-bottom: 20px;
     }
 
-    /* Animation Ghost */
-    @keyframes ghostFade {
-        0% { opacity: 0; filter: blur(8px); }
-        100% { opacity: 1; filter: blur(0px); }
-    }
-    .word-fade { animation: ghostFade 1.2s ease-out; color: #e6edf3; font-size: 24px; }
-
-    /* Glassmorphism Contacts */
-    .contact-box {
-        background: rgba(255, 255, 255, 0.05);
-        border: 1px solid #30363d;
-        border-radius: 20px;
+    .contact-card {
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid #222;
+        border-radius: 15px;
         padding: 15px;
         margin-bottom: 10px;
         display: flex;
-        justify-content: space-between;
         align-items: center;
+        transition: 0.3s;
+    }
+    .contact-card:hover { border-color: #af40ff; background: rgba(175, 64, 255, 0.05); }
+
+    .btn-aluetoo {
+        background: linear-gradient(to right, #af40ff, #00d4ff);
+        color: white !important;
+        border: none !important;
+        font-weight: bold !important;
+        border-radius: 50px !important;
+        height: 50px;
     }
     </style>
     """, unsafe_allow_html=True)
 
-# --- 3. LOGIQUE ALUETOO FULL SCREEN ---
-def toggle_aluetoo():
-    st.session_state.aluetoo_full = not st.session_state.aluetoo_full
+# --- 3. LOGIQUE CONTACTS ---
+def add_contact(name, phone):
+    if name and phone:
+        st.session_state.contacts.append({"name": name, "id": phone})
+        st.success(f"Contact {name} ajouté !")
 
-# --- 4. INTERFACE ---
+# --- 4. INTERFACE PRINCIPALE ---
 
-# HEADER AVEC BOUTON ALUETOO
-col_side, col_mid, col_side2 = st.columns([1, 4, 1])
-with col_mid:
-    if st.button("✨ OUVRIR ALUETOO AI ✨", use_container_width=True):
-        toggle_aluetoo()
-
-# MODE IA EN GRAND (SI ACTIVÉ)
-if st.session_state.aluetoo_full:
-    st.markdown('<div class="mega-title">ALUETOO AI</div>', unsafe_allow_html=True)
+if not st.session_state.aluetoo_open:
+    # --- VUE MESSAGERIE ---
+    st.markdown('<div class="mega-title">SOVEREIGN</div>', unsafe_allow_html=True)
     
-    # Historique de l'IA
+    if st.button("✨ LANCER ALUETOO AI", use_container_width=True, key="open_btn"):
+        st.session_state.aluetoo_open = True
+        st.rerun()
+
+    st.markdown("### 👥 Tes Contacts")
+    for c in st.session_state.contacts:
+        st.markdown(f"""
+            <div class="contact-card">
+                <div style="width:40px; height:40px; background:#333; border-radius:50%; margin-right:15px; display:flex; align-items:center; justify-content:center;">{c['name'][0]}</div>
+                <div style="flex:1"><b>{c['name']}</b><br><small style="color:gray">Ligne: {c['id']}</small></div>
+                <div style="color:#af40ff">📞</div>
+            </div>
+        """, unsafe_allow_html=True)
+
+    with st.expander("➕ Ajouter un nouveau numéro"):
+        new_name = st.text_input("Nom du contact")
+        new_num = st.text_input("Numéro Sovereign")
+        if st.button("Enregistrer le contact"):
+            add_contact(new_name, new_num)
+            st.rerun()
+
+else:
+    # --- VUE ALUETOO (AVEC ANIMATION) ---
+    st.markdown('<div class="aluetoo-container">', unsafe_allow_html=True)
+    st.markdown('<div class="mega-title">ALUETOO</div>', unsafe_allow_html=True)
+    
+    if st.button("✕ FERMER L'IA", use_container_width=True):
+        st.session_state.aluetoo_open = False
+        st.rerun()
+
+    # Chat
     for m in st.session_state.messages:
         with st.chat_message(m["role"]):
             st.markdown(m["content"])
 
-    # Chat input pour l'IA
-    if prompt := st.chat_input("Ordonne quelque chose à Aluetoo..."):
+    if prompt := st.chat_input("Que dois-je faire ?"):
         st.session_state.messages.append({"role": "user", "content": prompt})
         with st.chat_message("user"):
             st.markdown(prompt)
@@ -107,51 +128,25 @@ if st.session_state.aluetoo_full:
             placeholder = st.empty()
             full_response = ""
             
-            # Détection d'ordre d'envoi de message
-            is_sending = any(x in prompt.lower() for x in ["envoie", "ecrit", "envoyer", "écris"])
-            
-            completion = client.chat.completions.create(
+            # Détection d'envoi (même avec fautes)
+            keywords = ["envoie", "envoi", "ecrit", "envoy", "écrir", "transmet"]
+            is_action = any(k in prompt.lower() for k in keywords)
+
+            stream = client.chat.completions.create(
                 model="llama-3.3-70b-versatile",
-                messages=[{"role": "system", "content": "Tu es ALUETOO AI. Si l'utilisateur te demande d'envoyer un message, confirme que tu le fais avec style."}] + st.session_state.messages,
-                stream=True 
+                messages=[{"role": "system", "content": "Tu es ALUETOO AI. Tu peux envoyer des messages et gérer les contacts."}] + st.session_state.messages,
+                stream=True
             )
 
-            for chunk in completion:
+            for chunk in stream:
                 if chunk.choices[0].delta.content:
                     text = chunk.choices[0].delta.content
                     full_response += text
-                    placeholder.markdown(f'<div class="word-fade">{full_response}</div>', unsafe_allow_html=True)
-
-            if is_sending:
-                st.success("🚀 Action Sovereign : Message transmis avec succès via Aluetoo.")
+                    placeholder.markdown(full_response)
             
+            if is_action:
+                st.info("🎯 Aluetoo : Action de messagerie confirmée.")
+                
             st.session_state.messages.append({"role": "assistant", "content": full_response})
-
-    if st.button("❌ Fermer Aluetoo"):
-        toggle_aluetoo()
-        st.rerun()
-
-# MODE MESSAGERIE (SI IA FERMÉE)
-else:
-    st.markdown("### 📱 MESSAGERIE SOVEREIGN")
     
-    for contact in st.session_state.contacts:
-        st.markdown(f"""
-            <div class="contact-box">
-                <div>
-                    <b style="font-size:18px;">{contact['name']}</b><br>
-                    <small style="color:gray;">ID: {contact['id']}</small>
-                </div>
-                <div style="color:#0a84ff; font-size:24px;">💬</div>
-            </div>
-        """, unsafe_allow_html=True)
-    
-    if st.button("➕ Ajouter un contact"):
-        st.toast("Fonctionnalité d'ajout bientôt disponible")
-
-# --- 5. LOGIQUE VIDÉO (SANS CHANGEMENT) ---
-components.html("""
-    <script>
-    // Ici on peut garder PeerJS pour les appels en fond
-    </script>
-""", height=0)
+    st.markdown('</div>', unsafe_allow_html=True)
