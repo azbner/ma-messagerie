@@ -1,146 +1,134 @@
 import streamlit as st
-import uuid
-import random
+import streamlit.components.v1 as components
 
-# --- 1. CONFIGURATION RÉSEAU & APPAREIL ---
-st.set_page_config(page_title="SOVEREIGN MESSENGER", layout="wide")
+# --- 1. CONFIGURATION & STYLE ---
+st.set_page_config(page_title="SOVEREIGN P2P", layout="wide")
 
-# Injection de JavaScript pour gérer l'ID unique par appareil (Local Storage)
-# Cela permet d'avoir un ID qui reste le même sur un téléphone donné.
-if "device_id" not in st.session_state:
-    st.session_state.device_id = str(uuid.uuid4())[:8].upper()
-
-# --- 2. ARCHITECTURE DESIGN (CENTRAGE & RESPONSIVE) ---
-st.markdown(f"""
+st.markdown("""
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;900&display=swap');
-
-    .stApp {{
-        background-color: #050505;
-        color: #ffffff;
-        font-family: 'Inter', sans-serif;
-    }}
-
-    header, footer {{ visibility: hidden; }}
-
-    /* LE COEUR DU CENTRAGE */
-    .main .block-container {{
-        max-width: 600px !important; /* Largeur idéale pour mobile et PC */
+    .stApp { background-color: #000; color: #fff; font-family: 'Inter', sans-serif; }
+    header, footer { visibility: hidden; }
+    
+    /* CENTRAGE ABSOLU */
+    .main .block-container {
+        max-width: 500px !important;
         margin: auto !important;
         padding-top: 2rem !important;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-    }}
+    }
 
-    /* TITRE XXL DÉGRADÉ */
-    .mega-title {{
-        font-weight: 900;
-        background: linear-gradient(180deg, #FFFFFF 0%, #444444 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        font-size: 60px;
-        text-align: center;
-        letter-spacing: -3px;
-        margin-bottom: 5px;
-    }}
+    .mega-title {
+        font-weight: 900; font-size: 50px; text-align: center;
+        background: linear-gradient(180deg, #fff 0%, #333 100%);
+        -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        letter-spacing: -3px; margin-bottom: 0;
+    }
 
-    .device-badge {{
-        background: #111;
-        padding: 5px 15px;
-        border-radius: 50px;
-        border: 1px solid #222;
-        color: #00ff88;
-        font-family: monospace;
-        font-size: 12px;
-        margin-bottom: 30px;
-    }}
+    .id-display {
+        text-align: center; color: #00ff88; font-family: monospace;
+        background: #111; border-radius: 10px; padding: 10px; margin-top: 10px;
+    }
 
-    /* MESSAGERIE STYLE SOUVERAIN */
-    .chat-card {{
-        background: #0a0a0a;
-        border: 1px solid #1a1a1a;
-        border-radius: 20px;
-        padding: 20px;
-        width: 100%;
-        margin-bottom: 15px;
-        transition: 0.3s;
-    }}
+    /* ZONE DE CHAT */
+    #chat-box {
+        height: 400px; overflow-y: auto; border: 1px solid #222;
+        padding: 15px; border-radius: 15px; background: #050505;
+        display: flex; flex-direction: column; gap: 10px;
+    }
 
-    .chat-card:hover {{
-        border-color: #333;
-    }}
-
-    /* INPUT STYLE */
-    div[data-testid="stChatInput"] {{
-        background-color: #111 !important;
-        border-radius: 50px !important;
-        border: 1px solid #222 !important;
-    }}
+    .msg { padding: 10px 15px; border-radius: 15px; max-width: 80%; font-size: 14px; }
+    .sent { background: #1a1a1a; align-self: flex-end; border: 1px solid #333; }
+    .recv { background: #0056b3; align-self: flex-start; }
     </style>
 """, unsafe_allow_html=True)
 
-# --- 3. INITIALISATION DE LA MÉMOIRE ---
-if "contacts" not in st.session_state:
-    st.session_state.contacts = {} # Structure: { "Nom": {"id": "ID", "msgs": []} }
-if "current_chat" not in st.session_state:
-    st.session_state.current_chat = None
-
-# --- 4. INTERFACE ---
-
-# Entête
 st.markdown('<div class="mega-title">SOVEREIGN</div>', unsafe_allow_html=True)
-st.markdown(f'<div class="device-badge">MON ID APPAREIL : {st.session_state.device_id}</div>', unsafe_allow_html=True)
 
-# Gestion des Contacts (Centré)
-with st.container():
-    col1, col2 = st.columns([2, 1])
-    with col1:
-        new_contact_name = st.text_input("", placeholder="Nom de l'ami...", label_visibility="collapsed")
-    with col2:
-        new_contact_id = st.text_input("", placeholder="Son ID...", label_visibility="collapsed")
+# --- 2. LE MOTEUR DE CONNEXION (JAVASCRIPT PEERJS) ---
+# Ce code permet la communication réelle entre deux onglets/appareils
+st.components.v1.html("""
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     
-    if st.button("➕ AJOUTER UN AMI", use_container_width=True):
-        if new_contact_name and new_contact_id:
-            st.session_state.contacts[new_contact_name] = {"id": new_contact_id, "msgs": []}
-            st.rerun()
-
-st.markdown("---")
-
-# Liste des discussions
-if not st.session_state.contacts:
-    st.info("Aucun contact. Ajoutez l'ID d'un ami pour commencer.")
-else:
-    # Navigation entre les amis
-    contact_list = list(st.session_state.contacts.keys())
-    choice = st.segmented_control("Discuter avec :", contact_list, selection_mode="single")
-    
-    if choice:
-        st.session_state.current_chat = choice
+    <div style="color:white; font-family:sans-serif;">
+        <div id="my-id-label" class="id-display" style="background:#111; color:#00ff88; padding:10px; border-radius:10px; text-align:center; font-family:monospace; margin-bottom:20px;">Génération de votre ID...</div>
         
-        # Zone de messages
-        st.markdown(f"### Chat avec {choice}")
-        chat_data = st.session_state.contacts[choice]
-        
-        for msg in chat_data["msgs"]:
-            with st.chat_message(msg["role"]):
-                st.markdown(msg["content"])
+        <div style="display:flex; gap:10px; margin-bottom:20px;">
+            <input type="text" id="dest-id" placeholder="ID de votre ami" style="flex:1; padding:10px; border-radius:10px; border:1px solid #333; background:#000; color:white;">
+            <button onclick="connectToPeer()" style="padding:10px; border-radius:10px; border:none; background:#fff; color:#000; font-weight:bold; cursor:pointer;">Connecter</button>
+        </div>
 
-        # Input pour envoyer
-        if prompt := st.chat_input(f"Écrire à {choice}..."):
-            # Enregistrement du message
-            st.session_state.contacts[choice]["msgs"].append({"role": "user", "content": prompt})
-            # Simulation de réception (pour le test)
-            st.session_state.contacts[choice]["msgs"].append({"role": "assistant", "content": "Message reçu sur ma ligne."})
-            st.rerun()
+        <div id="chat-box" style="height:300px; border:1px solid #222; border-radius:15px; padding:15px; overflow-y:auto; display:flex; flex-direction:column; gap:10px; background:#050505;">
+            <div style="color:#555; text-align:center; font-size:12px;">Système : En attente de connexion...</div>
+        </div>
 
-# --- 5. ADAPTATION MOBILE ---
-# Ce bloc s'assure que sur mobile, le clavier n'écrase pas tout
-st.markdown("""
+        <div style="display:flex; gap:10px; margin-top:20px;">
+            <input type="text" id="msg-input" placeholder="Écrire un message..." style="flex:1; padding:10px; border-radius:10px; border:1px solid #333; background:#000; color:white;">
+            <button onclick="sendMessage()" style="padding:10px; border-radius:10px; border:none; background:#00ff88; color:#000; font-weight:bold; cursor:pointer;">Encaisser</button>
+        </div>
+    </div>
+
     <script>
-    var main = window.parent.document.querySelector('.main');
-    main.style.display = 'flex';
-    main.style.flexDirection = 'column';
-    main.style.alignItems = 'center';
+        var peer = new Peer();
+        var conn;
+        var chatBox = document.getElementById('chat-box');
+        var myIdLabel = document.getElementById('my-id-label');
+
+        // 1. Récupérer mon ID
+        peer.on('open', function(id) {
+            myIdLabel.innerHTML = "VOTRE ID : " + id;
+        });
+
+        // 2. Attendre une connexion entrante
+        peer.on('connection', function(c) {
+            conn = c;
+            setupChat();
+        });
+
+        // 3. Fonction pour se connecter à un ami
+        function connectToPeer() {
+            var destId = document.getElementById('dest-id').value;
+            conn = peer.connect(destId);
+            setupChat();
+        }
+
+        function setupChat() {
+            conn.on('open', function() {
+                chatBox.innerHTML += '<div style="color:#00ff88; text-align:center; font-size:12px;">Connecté à ' + conn.peer + '</div>';
+                
+                conn.on('data', function(data) {
+                    addMessage(data, 'recv');
+                });
+            });
+        }
+
+        function sendMessage() {
+            var input = document.getElementById('msg-input');
+            var msg = input.value;
+            if (conn && conn.open) {
+                conn.send(msg);
+                addMessage(msg, 'sent');
+                input.value = "";
+            }
+        }
+
+        function addMessage(msg, type) {
+            var div = document.createElement('div');
+            div.style.padding = "10px 15px";
+            div.style.borderRadius = "15px";
+            div.style.maxWidth = "80%";
+            div.style.fontSize = "14px";
+            
+            if (type === 'sent') {
+                div.style.background = "#1a1a1a";
+                div.style.alignSelf = "flex-end";
+                div.style.border = "1px solid #333";
+            } else {
+                div.style.background = "#0056b3";
+                div.style.alignSelf = "flex-start";
+            }
+            
+            div.innerText = msg;
+            chatBox.appendChild(div);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
     </script>
-""", unsafe_allow_html=True)
+""", height=600)
