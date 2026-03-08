@@ -9,4 +9,4 @@ html_code = """
 </html>
 """ # <--- Vérifie bien qu'il y a 3 guillemets ici
 
-components.html(html_code, height=800)
+components.html(html_code, height=1200)
