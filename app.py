@@ -7,7 +7,7 @@ st.set_page_config(page_title="Sovereign x Aluetoo", layout="centered")
 
 # --- CONFIGURATION IA ALUETOO ---
 # REMPLACE 'TONNE_CLE_GROQ' PAR TA VRAIE CLÉ
-GROQ_API_KEY = "TONNE_CLE_GROQ" 
+GROQ_API_KEY = "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" 
 client = Groq(api_key=GROQ_API_KEY)
 
 # Masquer l'interface Streamlit
