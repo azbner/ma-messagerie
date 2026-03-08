@@ -1,8 +1,16 @@
 import streamlit as st
 import streamlit.components.v1 as components
+from groq import Groq
 
-# Configuration pour un look application mobile native
-st.set_page_config(page_title="Sovereign Pro", layout="centered")
+# Configuration Streamlit
+st.set_page_config(page_title="Sovereign x Aluetoo", layout="centered")
+
+# --- CONFIGURATION IA ALUETOO ---
+# REMPLACE PAR TA VRAIE CLÉ GROQ
+GROQ_API_KEY = "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" 
+client = Groq(api_key=GROQ_API_KEY)
+
+# Masquage de l'interface Streamlit
 st.markdown("<style>#MainMenu {visibility: hidden;} footer {visibility: hidden;} header {visibility: hidden;} .stApp {background: #000;}</style>", unsafe_allow_html=True)
 
 html_code = """
@@ -15,229 +23,167 @@ html_code = """
     <style>
         :root {
             --accent: #0a84ff; --bg: #000; --surface: #1c1c1e; --text: #fff;
-            --secondary: #8e8e93; --danger: #ff3b30; --success: #34c759;
+            --aluetoo-grad: linear-gradient(135deg, #5856d6 0%, #007aff 100%);
         }
 
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
-        body { margin: 0; background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, sans-serif; overflow: hidden; height: 100vh; }
+        body { margin: 0; background: #000; color: #fff; font-family: -apple-system, sans-serif; overflow: hidden; height: 100vh; }
 
-        /* ANIMATIONS */
-        .slide-up { animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
-        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-        .fade { animation: fadeIn 0.3s ease; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        /* BOUTON ALUETOO DÉGRADÉ */
+        .aluetoo-logo {
+            background: var(--aluetoo-grad);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 800;
+            font-size: 14px;
+            letter-spacing: 1px;
+            cursor: pointer;
+            padding: 5px 10px;
+            border: 1px solid #5856d6;
+            border-radius: 20px;
+            transition: 0.3s;
+        }
+        .aluetoo-logo:hover { transform: scale(1.05); border-color: #fff; }
 
-        /* SCREENS */
-        .screen { position: absolute; inset: 0; background: var(--bg); display: flex; flex-direction: column; z-index: 10; transition: 0.4s; }
+        /* SCREENS & ANIMATIONS */
+        .screen { position: absolute; inset: 0; background: #000; transition: 0.4s cubic-bezier(0.16, 1, 0.3, 1); display: flex; flex-direction: column; }
         .hidden { transform: translateX(100%); }
+        .fade-in { animation: fadeIn 0.4s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
 
-        /* CONTACTS LIST */
-        header { padding: 60px 20px 20px; background: rgba(0,0,0,0.8); backdrop-filter: blur(20px); border-bottom: 0.5px solid #222; }
-        .contact-card { display: flex; align-items: center; padding: 15px 20px; border-bottom: 0.5px solid #222; cursor: pointer; transition: 0.2s; }
-        .contact-card:active { background: #111; }
-        .avatar { width: 55px; height: 55px; border-radius: 50%; background: linear-gradient(135deg, #333, #111); margin-right: 15px; display:flex; align-items:center; justify-content:center; font-weight:bold; }
+        header { padding: 60px 20px 15px; background: rgba(0,0,0,0.8); backdrop-filter: blur(15px); border-bottom: 0.5px solid #333; display: flex; justify-content: space-between; align-items: center; }
 
-        /* CALL UI (PRO) */
-        #call-screen { position: fixed; inset: 0; background: #000; z-index: 2000; display: none; flex-direction: column; justify-content: space-between; padding: 60px 20px 40px; }
-        .video-grid { position: absolute; inset: 0; z-index: 1; }
-        #remote-video { width: 100%; height: 100%; object-fit: cover; }
-        #local-video { position: absolute; top: 40px; right: 20px; width: 100px; height: 150px; border-radius: 12px; border: 1px solid #444; object-fit: cover; z-index: 2; transition: 0.3s; }
-        
-        .call-info { position: relative; z-index: 3; text-align: center; }
-        .controls-bar { position: relative; z-index: 3; display: flex; justify-content: center; gap: 20px; background: rgba(255,255,255,0.1); backdrop-filter: blur(15px); padding: 20px; border-radius: 40px; margin: 0 10px; }
-        .c-btn { width: 60px; height: 60px; border-radius: 50%; border: none; color: #fff; font-size: 24px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
-        .btn-gray { background: rgba(255,255,255,0.2); }
-        .btn-gray.active { background: #fff; color: #000; }
-        .btn-red { background: var(--danger); }
-        .btn-share { background: var(--accent); }
+        /* CONTACTS & CHAT */
+        .contact-item { display: flex; align-items: center; padding: 15px 20px; border-bottom: 0.5px solid #222; cursor: pointer; }
+        .avatar { width: 50px; height: 50px; border-radius: 50%; background: #333; margin-right: 15px; display:flex; align-items:center; justify-content:center; }
+        #chat-flow { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 10px; }
+        .bubble { max-width: 75%; padding: 12px 16px; border-radius: 20px; font-size: 16px; }
+        .me { align-self: flex-end; background: var(--accent); }
+        .them { align-self: flex-start; background: #262629; }
 
-        /* MODAL */
-        .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 3000; display: none; align-items: center; justify-content: center; padding: 20px; }
-        .modal-content { background: var(--surface); width: 100%; max-width: 350px; padding: 30px; border-radius: 25px; border: 1px solid #333; }
-        input { width: 100%; padding: 15px; border-radius: 12px; border: none; background: #000; color: #fff; margin-bottom: 15px; font-size: 16px; }
+        /* FENÊTRE IA ALUETOO */
+        #aluetoo-screen { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 5000; display: none; flex-direction: column; align-items: center; justify-content: center; padding: 30px; }
+        .ai-box { background: var(--surface); padding: 25px; border-radius: 25px; border: 1px solid #5856d6; width: 100%; text-align: center; }
+
+        .input-bar { padding: 10px 15px 35px; background: var(--surface); display: flex; gap: 10px; }
+        input { flex:1; background:#000; border:none; padding:12px; border-radius:20px; color:#fff; }
     </style>
 </head>
 <body>
 
-    <div class="screen" id="login-screen">
-        <div style="margin: auto; width: 85%; text-align: center;">
-            <div style="font-size: 60px; margin-bottom: 10px;">🛡️</div>
-            <h1 style="font-size: 32px; margin-bottom: 30px;">Sovereign Pro</h1>
-            <input type="tel" id="my-num" placeholder="Votre numéro de ligne">
-            <button onclick="connect()" style="width:100%; padding:18px; border-radius:15px; background:var(--accent); color:#fff; border:none; font-weight:bold; font-size:18px;">Activer la ligne</button>
+    <div class="screen" id="scr-login">
+        <div style="margin:auto; text-align:center; width:80%;">
+            <div style="font-size:60px; margin-bottom:20px;">🛡️</div>
+            <h1>Sovereign Pro</h1>
+            <input type="tel" id="my-num" placeholder="Ton numéro Sovereign" style="width:100%; margin-bottom:15px;">
+            <button onclick="initApp()" style="width:100%; padding:15px; border-radius:15px; background:var(--accent); color:#fff; border:none; font-weight:bold;">Se connecter</button>
         </div>
     </div>
 
-    <div class="screen hidden" id="list-screen">
+    <div class="screen hidden" id="scr-list">
         <header>
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px">
-                <span style="color:var(--accent)">Paramètres</span>
-                <span onclick="showModal()" style="font-size:28px; color:var(--accent); cursor:pointer">⊕</span>
-            </div>
-            <h1 style="font-size:34px; margin:0">Contacts</h1>
+            <div class="aluetoo-logo" onclick="openAluetoo()">ALUETOO</div>
+            <b id="my-display-id">Messages</b>
+            <span style="font-size:24px; color:var(--accent); cursor:pointer" onclick="toggleModal(true)">⊕</span>
         </header>
-        <div id="contacts-container" style="flex:1; overflow-y:auto"></div>
+        <div id="contacts-list" style="flex:1; overflow-y:auto"></div>
     </div>
 
-    <div id="call-screen" class="fade">
-        <div class="call-info">
-            <h2 id="call-target-name">Appel en cours...</h2>
-            <div id="call-timer">00:00</div>
-        </div>
-        
-        <div class="video-grid">
-            <video id="remote-video" autoplay playsinline></video>
-            <video id="local-video" autoplay playsinline muted></video>
-        </div>
-
-        <div class="controls-bar">
-            <button class="c-btn btn-gray" id="btn-mic" onclick="toggleMic()">🎤</button>
-            <button class="c-btn btn-gray" id="btn-cam" onclick="toggleCam()">📷</button>
-            <button class="c-btn btn-share" onclick="shareScreen()">📤</button>
-            <button class="c-btn btn-red" onclick="hangup()">✕</button>
+    <div class="screen hidden" id="scr-chat" style="z-index:20;">
+        <header>
+            <span onclick="closeChat()" style="color:var(--accent); cursor:pointer">〈 Retour</span>
+            <b id="active-name">Nom</b>
+            <span onclick="startCall()" style="font-size:20px;">📹</span>
+        </header>
+        <div id="chat-flow"></div>
+        <div class="input-bar">
+            <input type="text" id="msg-input" placeholder="Message">
+            <button onclick="sendMsg()" style="background:none; border:none; color:var(--accent); font-weight:bold;">Envoyer</button>
         </div>
     </div>
 
-    <div class="modal" id="add-modal">
-        <div class="modal-content slide-up">
-            <h2 style="margin-top:0">Nouveau contact</h2>
-            <input type="text" id="c-name" placeholder="Nom complet">
-            <input type="tel" id="c-num" placeholder="Numéro Sovereign">
+    <div id="aluetoo-screen" class="fade-in">
+        <div class="ai-box">
+            <div style="font-size:40px; margin-bottom:15px;">🤖</div>
+            <h2 style="margin:0; background:var(--aluetoo-grad); -webkit-background-clip:text; -webkit-text-fill-color:transparent;">Aluetoo Assistant</h2>
+            <p style="color:gray; font-size:14px; margin-bottom:20px;">Je peux t'aider à rédiger, traduire ou analyser tes messages.</p>
+            <textarea id="ai-input" placeholder="Pose ta question ou colle un message ici..." style="width:100%; height:100px; background:#000; color:#fff; border-radius:12px; padding:10px; border:1px solid #333; margin-bottom:15px;"></textarea>
             <div style="display:flex; gap:10px">
-                <button onclick="hideModal()" style="flex:1; padding:15px; border-radius:12px; background:#333; color:#fff; border:none;">Annuler</button>
-                <button onclick="saveContact()" style="flex:1; padding:15px; border-radius:12px; background:var(--accent); color:#fff; border:none; font-weight:bold;">Ajouter</button>
+                <button onclick="closeAluetoo()" style="flex:1; padding:12px; border-radius:12px; background:#333; color:#fff; border:none;">Fermer</button>
+                <button onclick="askAI()" style="flex:1; padding:12px; border-radius:12px; background:var(--aluetoo-grad); color:#fff; border:none; font-weight:bold;">Demander</button>
             </div>
         </div>
     </div>
 
     <script>
         let peer;
-        let localStream;
-        let screenStream;
-        let currentCall;
-        let isMicOn = true;
-        let isCamOn = true;
+        let contacts = [];
 
-        // --- CORE LOGIC ---
-        function connect() {
+        function initApp() {
             const num = document.getElementById('my-num').value;
             if(!num) return;
             peer = new Peer(num);
-            peer.on('open', (id) => {
-                document.getElementById('login-screen').classList.add('hidden');
-                document.getElementById('list-screen').classList.remove('hidden');
-                loadContacts();
+            peer.on('open', () => {
+                document.getElementById('scr-login').classList.add('hidden');
+                document.getElementById('scr-list').classList.remove('hidden');
+                document.getElementById('my-display-id').innerText = "ID: " + num;
             });
-
-            peer.on('call', call => {
-                if(confirm("Appel entrant de " + call.peer)) {
-                    startStream().then(stream => {
-                        showCallUI(call.peer);
-                        call.answer(stream);
-                        handleCall(call);
-                    });
-                }
-            });
-        }
-
-        async function startStream() {
-            localStream = await navigator.mediaDevices.getUserMedia({video: true, audio: true});
-            document.getElementById('local-video').srcObject = localStream;
-            return localStream;
-        }
-
-        function handleCall(call) {
-            currentCall = call;
-            call.on('stream', rs => {
-                document.getElementById('remote-video').srcObject = rs;
-            });
-            call.on('close', hangup);
-        }
-
-        // --- CONTACTS ---
-        function saveContact() {
-            const n = document.getElementById('c-name').value;
-            const p = document.getElementById('c-num').value;
-            if(!n || !p) return;
-            let contacts = JSON.parse(localStorage.getItem('sov_contacts') || '[]');
-            contacts.push({name: n, num: p});
-            localStorage.setItem('sov_contacts', JSON.stringify(contacts));
-            hideModal();
             loadContacts();
         }
 
         function loadContacts() {
-            const container = document.getElementById('contacts-container');
+            const saved = JSON.parse(localStorage.getItem('contacts_sov') || '[]');
+            const container = document.getElementById('contacts-list');
             container.innerHTML = "";
-            const contacts = JSON.parse(localStorage.getItem('sov_contacts') || '[]');
-            contacts.forEach(c => {
+            saved.forEach(c => {
                 const div = document.createElement('div');
-                div.className = "contact-card fade";
-                div.onclick = () => initiateCall(c);
-                div.innerHTML = `
-                    <div class="avatar">${c.name[0]}</div>
-                    <div style="flex:1">
-                        <div style="font-weight:bold; font-size:17px">${c.name}</div>
-                        <div style="color:var(--secondary); font-size:14px">ID: ${c.num}</div>
-                    </div>
-                    <div style="color:var(--accent)">📞</div>
-                `;
+                div.className = "contact-item";
+                div.onclick = () => openChat(c);
+                div.innerHTML = `<div class="avatar">${c.name[0]}</div><div><b>${c.name}</b><br><small style="color:gray">ID: ${c.num}</small></div>`;
                 container.appendChild(div);
             });
         }
 
-        // --- CALL ACTIONS ---
-        async function initiateCall(contact) {
-            const stream = await startStream();
-            showCallUI(contact.name);
-            const call = peer.call(contact.num, stream);
-            handleCall(call);
+        function openChat(c) {
+            document.getElementById('active-name').innerText = c.name;
+            document.getElementById('scr-chat').classList.remove('hidden');
         }
 
-        function showCallUI(name) {
-            document.getElementById('call-screen').style.display = 'flex';
-            document.getElementById('call-target-name').innerText = name;
+        function closeChat() { document.getElementById('scr-chat').classList.add('hidden'); }
+
+        function openAluetoo() { document.getElementById('aluetoo-screen').style.display = 'flex'; }
+        function closeAluetoo() { document.getElementById('aluetoo-screen').style.display = 'none'; }
+
+        function askAI() {
+            const val = document.getElementById('ai-input').value;
+            if(!val) return;
+            window.parent.postMessage({type: 'streamlit:setComponentValue', value: val}, '*');
         }
 
-        function toggleMic() {
-            isMicOn = !isMicOn;
-            localStream.getAudioTracks()[0].enabled = isMicOn;
-            document.getElementById('btn-mic').classList.toggle('active', !isMicOn);
-            document.getElementById('btn-mic').innerText = isMicOn ? "🎤" : "🔇";
+        function toggleModal(show) {
+            if(show) {
+                const name = prompt("Nom du contact :");
+                const num = prompt("Numéro Sovereign :");
+                if(name && num) {
+                    let c = JSON.parse(localStorage.getItem('contacts_sov') || '[]');
+                    c.push({name, num});
+                    localStorage.setItem('contacts_sov', JSON.stringify(c));
+                    loadContacts();
+                }
+            }
         }
-
-        function toggleCam() {
-            isCamOn = !isCamOn;
-            localStream.getVideoTracks()[0].enabled = isCamOn;
-            document.getElementById('btn-cam').classList.toggle('active', !isCamOn);
-            document.getElementById('btn-cam').innerText = isCamOn ? "📷" : "🚫";
-        }
-
-        async function shareScreen() {
-            try {
-                screenStream = await navigator.mediaDevices.getDisplayMedia({video: true});
-                let videoTrack = screenStream.getVideoTracks()[0];
-                let sender = currentCall.peerConnection.getSenders().find(s => s.track.kind === 'video');
-                sender.replaceTrack(videoTrack);
-                
-                videoTrack.onended = () => {
-                    sender.replaceTrack(localStream.getVideoTracks()[0]);
-                };
-            } catch (err) { console.error(err); }
-        }
-
-        function hangup() {
-            if(currentCall) currentCall.close();
-            if(localStream) localStream.getTracks().forEach(t => t.stop());
-            if(screenStream) screenStream.getTracks().forEach(t => t.stop());
-            document.getElementById('call-screen').style.display = 'none';
-        }
-
-        function showModal() { document.getElementById('add-modal').style.display = 'flex'; }
-        function hideModal() { document.getElementById('add-modal').style.display = 'none'; }
     </script>
 </body>
 </html>
 """
 
-components.html(html_code, height=850, scrolling=False)
+# Logique de réponse Aluetoo
+res = components.html(html_code, height=850, scrolling=False)
+
+if st.session_state.get("value"):
+    query = st.session_state.value
+    response = client.chat.completions.create(
+        model="llama3-8b-8192",
+        messages=[{"role": "system", "content": "Tu es Aluetoo, l'IA assistante. Aide l'utilisateur à rédiger ses messages de façon cool et concise."},
+                  {"role": "user", "content": query}]
+    ).choices[0].message.content
+    st.info(f"🤖 Aluetoo suggère : {response}")
