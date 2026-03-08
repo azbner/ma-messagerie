@@ -1,93 +1,146 @@
 import streamlit as st
-from groq import Groq
+import uuid
 import random
 
-# --- CORE CONFIG ---
-st.set_page_config(page_title="SOVEREIGN", layout="wide")
-client = Groq(api_key="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")
+# --- 1. CONFIGURATION RÉSEAU & APPAREIL ---
+st.set_page_config(page_title="SOVEREIGN MESSENGER", layout="wide")
 
-# Initialisation
-if "my_id" not in st.session_state:
-    st.session_state.my_id = f"Ligne-{random.randint(100, 999)}"
-if "contacts" not in st.session_state:
-    st.session_state.contacts = {"Aluetoo AI": []}
-if "chat_with" not in st.session_state:
-    st.session_state.chat_with = "Aluetoo AI"
+# Injection de JavaScript pour gérer l'ID unique par appareil (Local Storage)
+# Cela permet d'avoir un ID qui reste le même sur un téléphone donné.
+if "device_id" not in st.session_state:
+    st.session_state.device_id = str(uuid.uuid4())[:8].upper()
 
-# --- DESIGN "NO COMPROMISE" ---
+# --- 2. ARCHITECTURE DESIGN (CENTRAGE & RESPONSIVE) ---
 st.markdown(f"""
     <style>
-    .stApp {{ background: #000; color: #fff; font-family: 'Inter', sans-serif; }}
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;900&display=swap');
+
+    .stApp {{
+        background-color: #050505;
+        color: #ffffff;
+        font-family: 'Inter', sans-serif;
+    }}
+
     header, footer {{ visibility: hidden; }}
-    
-    /* Container Central */
-    .main .block-container {{ max-width: 800px !important; margin: auto; }}
 
-    /* Titre Impact XXL */
-    .header {{
-        font-weight: 900; font-size: 80px; text-align: center;
-        background: linear-gradient(180deg, #fff 0%, #333 100%);
-        -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-        letter-spacing: -4px; margin-bottom: 0;
+    /* LE COEUR DU CENTRAGE */
+    .main .block-container {{
+        max-width: 600px !important; /* Largeur idéale pour mobile et PC */
+        margin: auto !important;
+        padding-top: 2rem !important;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
     }}
 
-    /* Barre ID */
-    .id-badge {{
-        text-align: center; color: #555; font-family: monospace;
-        letter-spacing: 3px; margin-bottom: 40px; font-size: 12px;
+    /* TITRE XXL DÉGRADÉ */
+    .mega-title {{
+        font-weight: 900;
+        background: linear-gradient(180deg, #FFFFFF 0%, #444444 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        font-size: 60px;
+        text-align: center;
+        letter-spacing: -3px;
+        margin-bottom: 5px;
     }}
 
-    /* Chat Bubbles */
-    .stChatMessage {{ background: #0a0a0a !important; border: 1px solid #111 !important; border-radius: 15px !important; }}
-    
-    /* Input */
-    div[data-testid="stChatInput"] {{ border: 1px solid #222 !important; border-radius: 50px !important; background: #050505 !important; }}
-    
-    /* Animation "Ghost" Aluetoo */
-    @keyframes ghost {{ 0% {{ opacity:0; filter:blur(10px); }} 100% {{ opacity:1; filter:blur(0); }} }}
-    .aluetoo-msg {{ animation: ghost 0.8s ease-out; color: #af40ff; }}
+    .device-badge {{
+        background: #111;
+        padding: 5px 15px;
+        border-radius: 50px;
+        border: 1px solid #222;
+        color: #00ff88;
+        font-family: monospace;
+        font-size: 12px;
+        margin-bottom: 30px;
+    }}
+
+    /* MESSAGERIE STYLE SOUVERAIN */
+    .chat-card {{
+        background: #0a0a0a;
+        border: 1px solid #1a1a1a;
+        border-radius: 20px;
+        padding: 20px;
+        width: 100%;
+        margin-bottom: 15px;
+        transition: 0.3s;
+    }}
+
+    .chat-card:hover {{
+        border-color: #333;
+    }}
+
+    /* INPUT STYLE */
+    div[data-testid="stChatInput"] {{
+        background-color: #111 !important;
+        border-radius: 50px !important;
+        border: 1px solid #222 !important;
+    }}
     </style>
 """, unsafe_allow_html=True)
 
-# --- INTERFACE ---
-st.markdown('<div class="header">SOVEREIGN</div>', unsafe_allow_html=True)
-st.markdown(f'<div class="id-badge">ID: {st.session_state.my_id} // SECURED LINE</div>', unsafe_allow_html=True)
+# --- 3. INITIALISATION DE LA MÉMOIRE ---
+if "contacts" not in st.session_state:
+    st.session_state.contacts = {} # Structure: { "Nom": {"id": "ID", "msgs": []} }
+if "current_chat" not in st.session_state:
+    st.session_state.current_chat = None
 
-# Navigation Contacts Rapide
-cols = st.columns(len(st.session_state.contacts) + 1)
-for i, name in enumerate(st.session_state.contacts.keys()):
-    if cols[i].button(name, use_container_width=True):
-        st.session_state.chat_with = name
-        st.rerun()
-if cols[-1].button("⊕", use_container_width=True):
-    new_friend = st.text_input("Nom de l'ami")
-    if new_friend:
-        st.session_state.contacts[new_friend] = []
-        st.rerun()
+# --- 4. INTERFACE ---
 
-st.divider()
+# Entête
+st.markdown('<div class="mega-title">SOVEREIGN</div>', unsafe_allow_html=True)
+st.markdown(f'<div class="device-badge">MON ID APPAREIL : {st.session_state.device_id}</div>', unsafe_allow_html=True)
 
-# Zone de Chat
-st.subheader(f"Discussion : {st.session_state.chat_with}")
-for m in st.session_state.contacts[st.session_state.chat_with]:
-    with st.chat_message(m["role"]):
-        style = 'class="aluetoo-msg"' if st.session_state.chat_with == "Aluetoo AI" and m["role"] == "assistant" else ""
-        st.markdown(f'<div {style}>{m["content"]}</div>', unsafe_allow_html=True)
-
-# Input
-if prompt := st.chat_input(f"Écris à {st.session_state.chat_with}..."):
-    # Ajout du message
-    st.session_state.contacts[st.session_state.chat_with].append({"role": "user", "content": prompt})
+# Gestion des Contacts (Centré)
+with st.container():
+    col1, col2 = st.columns([2, 1])
+    with col1:
+        new_contact_name = st.text_input("", placeholder="Nom de l'ami...", label_visibility="collapsed")
+    with col2:
+        new_contact_id = st.text_input("", placeholder="Son ID...", label_visibility="collapsed")
     
-    # Logique IA
-    if st.session_state.chat_with == "Aluetoo AI":
-        res = client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
-            messages=[{"role": "system", "content": "Tu es Aluetoo. Courte, mystérieuse, efficace."}] + st.session_state.contacts["Aluetoo AI"]
-        ).choices[0].message.content
-        st.session_state.contacts["Aluetoo AI"].append({"role": "assistant", "content": res})
-    else:
-        # Simulation réponse ami
-        st.session_state.contacts[st.session_state.chat_with].append({"role": "assistant", "content": "Reçu."})
+    if st.button("➕ AJOUTER UN AMI", use_container_width=True):
+        if new_contact_name and new_contact_id:
+            st.session_state.contacts[new_contact_name] = {"id": new_contact_id, "msgs": []}
+            st.rerun()
+
+st.markdown("---")
+
+# Liste des discussions
+if not st.session_state.contacts:
+    st.info("Aucun contact. Ajoutez l'ID d'un ami pour commencer.")
+else:
+    # Navigation entre les amis
+    contact_list = list(st.session_state.contacts.keys())
+    choice = st.segmented_control("Discuter avec :", contact_list, selection_mode="single")
     
-    st.rerun()
+    if choice:
+        st.session_state.current_chat = choice
+        
+        # Zone de messages
+        st.markdown(f"### Chat avec {choice}")
+        chat_data = st.session_state.contacts[choice]
+        
+        for msg in chat_data["msgs"]:
+            with st.chat_message(msg["role"]):
+                st.markdown(msg["content"])
+
+        # Input pour envoyer
+        if prompt := st.chat_input(f"Écrire à {choice}..."):
+            # Enregistrement du message
+            st.session_state.contacts[choice]["msgs"].append({"role": "user", "content": prompt})
+            # Simulation de réception (pour le test)
+            st.session_state.contacts[choice]["msgs"].append({"role": "assistant", "content": "Message reçu sur ma ligne."})
+            st.rerun()
+
+# --- 5. ADAPTATION MOBILE ---
+# Ce bloc s'assure que sur mobile, le clavier n'écrase pas tout
+st.markdown("""
+    <script>
+    var main = window.parent.document.querySelector('.main');
+    main.style.display = 'flex';
+    main.style.flexDirection = 'column';
+    main.style.alignItems = 'center';
+    </script>
+""", unsafe_allow_html=True)
