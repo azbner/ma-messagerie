@@ -1,288 +1,185 @@
 import streamlit as st
 import streamlit.components.v1 as components
+from groq import Groq
 
-# Ton code HTML doit être stocké dans cette variable
+# Configuration de la page
+st.set_page_config(page_title="Sovereign x Aluetoo", layout="centered")
+
+# --- CONFIGURATION IA ALUETOO ---
+# REMPLACE 'TONNE_CLE_GROQ' PAR TA VRAIE CLÉ
+GROQ_API_KEY = "TONNE_CLE_GROQ" 
+client = Groq(api_key=GROQ_API_KEY)
+
+# Masquer l'interface Streamlit
+st.markdown("<style>#MainMenu {visibility: hidden;} footer {visibility: hidden;} header {visibility: hidden;} .stApp {background: #000;}</style>", unsafe_allow_html=True)
+
 html_code = """
 <!DOCTYPE html>
-<html>
-[<!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Sovereign Messenger Pro</title>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
         :root {
-            --accent: #0a84ff;
-            --bg: #000000;
-            --surface: #1c1c1e;
-            --text: #ffffff;
-            --text-secondary: #8e8e93;
-            --bubble-me: #0a84ff;
-            --bubble-them: #262629;
-            --red: #ff3b30;
+            --accent: #0a84ff; --bg: #000; --surface: #1c1c1e; --text: #fff;
+            --bubble-me: #0a84ff; --bubble-them: #262629; --aluetoo: #5856d6;
         }
 
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: #000; color: var(--text); font-family: -apple-system, sans-serif; overflow: hidden; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { margin: 0; background: #000; color: #fff; font-family: -apple-system, sans-serif; overflow: hidden; }
 
-        .iphone-container { width: 100%; max-width: 430px; height: 100%; margin: 0 auto; background: var(--bg); position: relative; display: flex; flex-direction: column; overflow: hidden; }
+        /* ANIMATIONS FONDU */
+        .fade-in { animation: fadeIn 0.5s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* Écrans */
-        .screen { position: absolute; inset: 0; background: var(--bg); transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1); z-index: 10; display: flex; flex-direction: column; }
-        .hidden-right { transform: translateX(100%); }
-        .hidden-left { transform: translateX(-100%); }
+        .screen { position: absolute; inset: 0; background: #000; transition: 0.4s cubic-bezier(0.16, 1, 0.3, 1); display: flex; flex-direction: column; }
+        .hidden { transform: translateX(100%); }
 
-        /* Login */
-        #screen-login { justify-content: center; padding: 40px; z-index: 50; }
-        .main-input { width: 100%; background: var(--surface); border: 1px solid #333; padding: 16px; border-radius: 14px; color: #fff; font-size: 18px; margin-bottom: 20px; }
-        .btn-primary { width: 100%; background: var(--accent); border: none; padding: 16px; border-radius: 14px; color: #fff; font-weight: 600; cursor: pointer; }
+        /* HEADER */
+        header { padding: 50px 20px 15px; background: rgba(28,28,30,0.8); backdrop-filter: blur(20px); border-bottom: 0.5px solid #333; display: flex; justify-content: space-between; align-items: center; }
 
-        /* Liste */
-        .header-main { padding: 60px 20px 20px; background: rgba(0,0,0,0.8); backdrop-filter: blur(20px); border-bottom: 0.5px solid #222; }
-        .chat-item { display: flex; padding: 15px 20px; border-bottom: 0.5px solid #222; align-items: center; cursor: pointer; }
-        .chat-avatar { width: 50px; height: 50px; border-radius: 50%; background: #333; margin-right: 15px; }
+        /* CHAT */
+        #chat-flow { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 12px; scroll-behavior: smooth; }
+        .bubble { max-width: 75%; padding: 12px 16px; border-radius: 20px; font-size: 16px; line-height: 1.4; position: relative; }
+        .me { align-self: flex-end; background: var(--bubble-me); border-bottom-right-radius: 4px; }
+        .them { align-self: flex-start; background: var(--bubble-them); border-bottom-left-radius: 4px; }
+        .ai-bubble { align-self: center; background: var(--aluetoo); border-radius: 15px; font-style: italic; font-size: 14px; text-align: center; width: 90%; }
 
-        /* Chat Window */
-        .chat-header { padding: 50px 15px 12px; background: var(--surface); display: flex; align-items: center; justify-content: space-between; border-bottom: 0.5px solid #333; }
-        .header-actions { display: flex; gap: 20px; color: var(--accent); font-size: 20px; }
-        #messages-flow { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 10px; }
-        
-        /* Message Vocal Style */
-        .audio-bubble { display: flex; align-items: center; gap: 10px; min-width: 150px; }
-        .play-btn { width: 30px; height: 30px; border-radius: 50%; background: #fff; border: none; cursor: pointer; }
+        /* BARRE D'ENTRÉE */
+        .input-bar { padding: 10px 15px 35px; background: var(--surface); display: flex; align-items: center; gap: 12px; }
+        .input-field { flex: 1; background: #000; border: none; padding: 12px 18px; border-radius: 25px; color: #fff; font-size: 16px; }
+        .btn-icon { font-size: 24px; cursor: pointer; transition: transform 0.2s; }
+        .btn-icon:active { transform: scale(0.9); }
 
-        .input-bar { padding: 10px 15px 35px; background: var(--surface); display: flex; align-items: center; gap: 10px; }
-        .input-field { flex: 1; background: #000; border: none; padding: 12px 15px; border-radius: 20px; color: #fff; }
-        .mic-icon { color: var(--accent); font-size: 24px; cursor: pointer; transition: 0.3s; }
-        .recording { color: var(--red); transform: scale(1.2); }
-
-        /* Vidéo Call Overlay */
-        #video-overlay { position: absolute; inset: 0; background: #000; z-index: 1000; display: none; flex-direction: column; }
+        /* VIDÉO */
+        #video-overlay { position: fixed; inset: 0; background: #000; z-index: 1000; display: none; flex-direction: column; }
         #remote-video { width: 100%; height: 100%; object-fit: cover; }
-        #local-video { position: absolute; top: 60px; right: 20px; width: 110px; height: 160px; border-radius: 15px; object-fit: cover; border: 2px solid #333; }
-        .call-controls { position: absolute; bottom: 50px; width: 100%; display: flex; justify-content: center; gap: 30px; }
-        .call-btn { width: 65px; height: 65px; border-radius: 50%; border: none; font-size: 25px; cursor: pointer; color: white; }
-        .hangup { background: var(--red); }
-
-        .modal { position: absolute; inset: 0; background: rgba(0,0,0,0.9); z-index: 100; display: none; align-items: center; justify-content: center; padding: 20px; }
-        .modal-content { background: var(--surface); width: 100%; padding: 30px; border-radius: 20px; }
-        .hidden { display: none !important; }
+        #local-video { position: absolute; top: 60px; right: 20px; width: 110px; height: 160px; border-radius: 15px; border: 2px solid #444; object-fit: cover; }
     </style>
 </head>
 <body>
 
-<div class="iphone-container">
-    
-    <div class="screen" id="screen-login">
-        <div style="text-align:center; margin-bottom:40px">
-            <div style="font-size:60px">💎</div>
-            <h2>Sovereign ID</h2>
+    <div class="screen fade-in" id="login-screen">
+        <div style="margin: auto; width: 80%; text-align: center;">
+            <div style="font-size: 80px; margin-bottom: 20px;">💎</div>
+            <h1 style="letter-spacing: -1px;">Sovereign</h1>
+            <input type="tel" id="my-num" placeholder="Ton numéro" style="width:100%; padding:15px; border-radius:12px; border:none; background:#1c1c1e; color:#fff; margin-bottom:15px;">
+            <button onclick="initSovereign()" style="width:100%; padding:15px; border-radius:12px; border:none; background:#0a84ff; color:#fff; font-weight:bold;">Entrer</button>
         </div>
-        <input type="tel" id="my-number" class="main-input" placeholder="Ton numéro (ex: 06...)">
-        <input type="text" id="my-name" class="main-input" placeholder="Pseudo">
-        <button class="btn-primary" onclick="initApp()">Lancer Sovereign</button>
     </div>
 
-    <div class="screen hidden-right" id="screen-list">
-        <div class="header-main">
-            <div style="display:flex; justify-content:space-between; align-items:center">
-                <h1>Messages</h1>
-                <span style="color:var(--accent); font-size:24px; cursor:pointer" onclick="openModal()">⊕</span>
+    <div class="screen hidden" id="app-screen">
+        <header>
+            <span style="color:var(--accent)">Modifier</span>
+            <b id="user-id">Messages</b>
+            <span style="font-size:24px; color:var(--accent)" onclick="toggleContactModal()">⊕</span>
+        </header>
+        
+        <div id="chat-flow">
             </div>
-        </div>
-        <div id="contacts-list" class="chat-list"></div>
-    </div>
 
-    <div class="screen hidden-right" id="screen-chat">
-        <div class="chat-header">
-            <span onclick="closeChat()" style="color:var(--accent); cursor:pointer">〈 Retour</span>
-            <b id="active-chat-title">Pseudo</b>
-            <div class="header-actions">
-                <span onclick="startCall(true)">📞</span>
-                <span onclick="startCall(false)">📹</span>
-            </div>
-        </div>
-        <div id="messages-flow"></div>
         <div class="input-bar">
-            <span class="mic-icon" id="mic-btn" onmousedown="startRecording()" onmouseup="stopRecording()">🎙️</span>
+            <span class="btn-icon" onclick="askAluetoo()" title="Demander à Aluetoo">🤖</span>
             <input type="text" id="msg-input" class="input-field" placeholder="iMessage">
-            <span style="color:var(--accent); font-weight:bold; cursor:pointer" onclick="sendMessage()">⬆</span>
+            <span class="btn-icon" onclick="startCall()">📹</span>
+            <span class="btn-icon" onclick="sendMsg()" style="color:var(--accent)">⬆</span>
         </div>
     </div>
 
     <div id="video-overlay">
         <video id="remote-video" autoplay playsinline></video>
         <video id="local-video" autoplay playsinline muted></video>
-        <div class="call-controls">
-            <button class="call-btn hangup" onclick="endCall()">✕</button>
-        </div>
+        <button onclick="endCall()" style="position:absolute; bottom:50px; left:50%; transform:translateX(-50%); width:70px; height:70px; border-radius:50%; background:#ff3b30; border:none; color:#fff; font-size:30px;">✕</button>
     </div>
 
-    <div class="modal" id="contact-modal">
-        <div class="modal-content">
-            <h3>Ajouter un ami</h3>
-            <input type="text" id="c-name" class="main-input" placeholder="Nom">
-            <input type="tel" id="c-num" class="main-input" placeholder="Numéro">
-            <button class="btn-primary" onclick="addContact()">Enregistrer</button>
-            <button class="btn-primary" style="background:#333; margin-top:10px" onclick="closeModal()">Fermer</button>
-        </div>
-    </div>
+    <script>
+        let peer;
+        let myNum;
+        let activeCall;
 
-</div>
-
-<script>
-    let peer;
-    let localStream;
-    let currentUser = null;
-    let contacts = [];
-    let activeChat = null;
-    let mediaRecorder;
-    let audioChunks = [];
-
-    // --- INITIALISATION PEERJS ---
-    function initApp() {
-        const num = document.getElementById('my-number').value;
-        const name = document.getElementById('my-name').value;
-        if(!num || !name) return alert("Infos manquantes");
-
-        currentUser = { num, name };
-        
-        // On initialise PeerJS avec le numéro comme ID
-        peer = new Peer(num);
-
-        peer.on('open', (id) => {
-            console.log("Connecté avec l'ID : " + id);
-            document.getElementById('screen-login').classList.add('hidden-left');
-            document.getElementById('screen-list').classList.remove('hidden-right');
-            loadContacts();
-        });
-
-        // Recevoir un appel
-        peer.on('call', (call) => {
-            if(confirm("Appel entrant ! Répondre ?")) {
-                navigator.mediaDevices.getUserMedia({video: true, audio: true}).then(stream => {
-                    localStream = stream;
-                    document.getElementById('video-overlay').style.display = 'flex';
-                    document.getElementById('local-video').srcObject = stream;
-                    call.answer(stream);
-                    call.on('stream', remoteStream => {
-                        document.getElementById('remote-video').srcObject = remoteStream;
-                    });
-                });
-            }
-        });
-    }
-
-    // --- GESTION DES APPELS ---
-    function startCall(audioOnly) {
-        if(!activeChat) return;
-        navigator.mediaDevices.getUserMedia({video: !audioOnly, audio: true}).then(stream => {
-            localStream = stream;
-            document.getElementById('video-overlay').style.display = 'flex';
-            document.getElementById('local-video').srcObject = stream;
+        function initSovereign() {
+            myNum = document.getElementById('my-num').value;
+            if(!myNum) return alert("Numéro requis");
             
-            const call = peer.call(activeChat.phone, stream);
-            call.on('stream', remoteStream => {
-                document.getElementById('remote-video').srcObject = remoteStream;
+            peer = new Peer(myNum);
+            peer.on('open', () => {
+                document.getElementById('login-screen').classList.add('hidden');
+                document.getElementById('app-screen').classList.remove('hidden');
+                document.getElementById('user-id').innerText = "ID: " + myNum;
             });
-        });
-    }
 
-    function endCall() {
-        if(localStream) localStream.getTracks().forEach(t => t.stop());
-        document.getElementById('video-overlay').style.display = 'none';
-    }
-
-    // --- MESSAGES VOCAUX ---
-    async function startRecording() {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        mediaRecorder = new MediaRecorder(stream);
-        audioChunks = [];
-        
-        mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
-        mediaRecorder.onstop = () => {
-            const audioBlob = new Blob(audioChunks, { type: 'audio/ogg; codecs=opus' });
-            const audioUrl = URL.createObjectURL(audioBlob);
-            sendVoiceMessage(audioUrl);
-        };
-
-        mediaRecorder.start();
-        document.getElementById('mic-btn').classList.add('recording');
-    }
-
-    function stopRecording() {
-        if(mediaRecorder) {
-            mediaRecorder.stop();
-            document.getElementById('mic-btn').classList.remove('recording');
+            peer.on('call', call => {
+                if(confirm("Appel de " + call.peer + " ?")) {
+                    navigator.mediaDevices.getUserMedia({video:true, audio:true}).then(stream => {
+                        document.getElementById('video-overlay').style.display = 'flex';
+                        document.getElementById('local-video').srcObject = stream;
+                        call.answer(stream);
+                        call.on('stream', rs => document.getElementById('remote-video').srcObject = rs);
+                    });
+                }
+            });
         }
-    }
 
-    function sendVoiceMessage(url) {
-        const flow = document.getElementById('messages-flow');
-        const b = document.createElement('div');
-        b.className = "bubble me audio-bubble";
-        b.innerHTML = `🎙️ <audio src="${url}" controls style="width:150px; height:30px"></audio>`;
-        flow.appendChild(b);
-        flow.scrollTop = flow.scrollHeight;
-    }
+        function sendMsg() {
+            const input = document.getElementById('msg-input');
+            if(!input.value) return;
+            addBubble(input.value, 'me');
+            input.value = "";
+        }
 
-    // --- LOGIQUE MESSAGERIE CLASSIQUE ---
-    function openModal() { document.getElementById('contact-modal').style.display = 'flex'; }
-    function closeModal() { document.getElementById('contact-modal').style.display = 'none'; }
+        function addBubble(text, type) {
+            const flow = document.getElementById('chat-flow');
+            const div = document.createElement('div');
+            div.className = `bubble ${type} fade-in`;
+            div.innerText = text;
+            flow.appendChild(div);
+            flow.scrollTop = flow.scrollHeight;
+        }
 
-    function addContact() {
-        const name = document.getElementById('c-name').value;
-        const phone = document.getElementById('c-num').value;
-        if(!name || !phone) return;
-        contacts.push({name, phone});
-        localStorage.setItem('contacts', JSON.stringify(contacts));
-        renderContacts();
-        closeModal();
-    }
+        // --- FONCTION IA ALUETOO ---
+        function askAluetoo() {
+            const input = document.getElementById('msg-input');
+            const question = input.value;
+            if(!question) return alert("Écris un début de message pour qu'Aluetoo t'aide !");
+            
+            addBubble("Aluetoo réfléchit...", "ai-bubble");
+            
+            // Envoi de la requête à Python (Groq) via Streamlit
+            window.parent.postMessage({
+                type: 'streamlit:setComponentValue',
+                value: question
+            }, '*');
+        }
 
-    function loadContacts() {
-        const saved = localStorage.getItem('contacts');
-        if(saved) contacts = JSON.parse(saved);
-        renderContacts();
-    }
+        function startCall() {
+            const target = prompt("Numéro à appeler :");
+            if(!target) return;
+            navigator.mediaDevices.getUserMedia({video:true, audio:true}).then(stream => {
+                document.getElementById('video-overlay').style.display = 'flex';
+                document.getElementById('local-video').srcObject = stream;
+                const call = peer.call(target, stream);
+                call.on('stream', rs => document.getElementById('remote-video').srcObject = rs);
+            });
+        }
 
-    function renderContacts() {
-        const list = document.getElementById('contacts-list');
-        list.innerHTML = "";
-        contacts.forEach(c => {
-            const item = document.createElement('div');
-            item.className = "chat-item";
-            item.onclick = () => openChat(c);
-            item.innerHTML = `<div class="chat-avatar"></div><div><b>${c.name}</b><p style="margin:0; font-size:12px; color:gray">ID: ${c.phone}</p></div>`;
-            list.appendChild(item);
-        });
-    }
-
-    function openChat(c) {
-        activeChat = c;
-        document.getElementById('active-chat-title').innerText = c.name;
-        document.getElementById('screen-chat').classList.remove('hidden-right');
-    }
-
-    function closeChat() { document.getElementById('screen-chat').classList.add('hidden-right'); }
-
-    function sendMessage() {
-        const inp = document.getElementById('msg-input');
-        if(!inp.value) return;
-        const flow = document.getElementById('messages-flow');
-        const b = document.createElement('div');
-        b.className = "bubble me";
-        b.innerText = inp.value;
-        flow.appendChild(b);
-        inp.value = "";
-        flow.scrollTop = flow.scrollHeight;
-    }
-</script>
+        function endCall() { location.reload(); }
+    </script>
 </body>
-</html>]
 </html>
-""" # <--- Vérifie bien qu'il y a 3 guillemets ici
+"""
 
-components.html(html_code, height=800)
+# Logique de réception de l'IA
+res = components.html(html_code, height=850, scrolling=False)
+
+# Si l'utilisateur clique sur le robot, cette partie Python s'active
+if st.session_state.get("value"):
+    user_query = st.session_state.value
+    response = client.chat.completions.create(
+        model="llama3-8b-8192",
+        messages=[{"role": "system", "content": "Tu es Aluetoo, l'IA intégrée à Sovereign. Sois bref, cool et aide l'utilisateur à répondre à ses amis."},
+                  {"role": "user", "content": user_query}]
+    ).choices[0].message.content
+    
+    # On renvoie la réponse dans l'interface (ici via un toast ou un affichage temporaire)
+    st.toast(f"Aluetoo : {response}")
